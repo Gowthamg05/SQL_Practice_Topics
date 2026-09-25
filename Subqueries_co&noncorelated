@@ -123,3 +123,120 @@ where e1.category=e.category)
 
 select * from sales.products
 
+
+use salesdb
+
+/* Q13 — Correlated
+Find customers who have placed more orders than the average number of orders placed by customers.
+Display: CustomerID, FirstName, TotalOrders. Requires aggregation inside a subquery */
+
+
+
+SELECT
+    o.customerid,
+    c.firstname,
+    COUNT(*) AS TotalOrders
+FROM sales.orders o
+JOIN sales.customers c
+    ON o.customerid = c.customerid
+GROUP BY
+    o.customerid,
+    c.firstname
+HAVING COUNT(*) >
+(
+    SELECT AVG(TotalOrders)
+    FROM
+    (
+        SELECT
+            customerid,
+            COUNT(*) AS TotalOrders
+        FROM sales.orders
+        GROUP BY customerid
+    ) t
+);
+
+
+/* Q14 — Correlated
+Find employees whose salary is greater than the average salary of employees reporting to the same
+manager.
+Display: EmployeeID, FirstName, ManagerID, Salary. */
+
+select * from sales.employees
+
+select 
+    e1.employeeid,
+    e1.firstname,
+    e1.managerid,
+    e1.salary
+    from sales.employees e1
+    where e1.salary >
+               ( select 
+                avg(salary)as avg_salary 
+                from sales.employees e
+                where e.managerid=e1.managerid
+                    ) 
+/* Q15 — Non-correlated
+Find all orders whose Sales are greater than the maximum Sales value in sales.ordersarchive.
+Display: OrderID, CustomerID, Sales. */
+
+select * from sales.OrdersArchive
+
+select 
+    orderid,
+    customerid,
+    sales
+    from sales.OrdersArchive
+    where sales > =
+                ( select max(sales) as max_sales from sales.OrdersArchive)
+                 group by orderid,customerid,sales
+
+/* Q16 — Non-correlated
+Find customers whose Score is greater than the average Score of customers who are from the USA.
+Display: CustomerID, FirstName, Country, Score. */
+
+select 
+    customerid,
+    firstname,
+    country,
+    score
+    from sales.customers
+    where score >
+                (select 
+                    avg(score) as avg_score 
+                    from sales.customers
+                    where country='usa')
+
+/* Q17 — Correlated
+Find products whose price is equal to the maximum price in their own category.
+Display: ProductID, Product, Category, Price. */
+
+select 
+        p1.productid,
+        p1.product,
+        p1.category,
+        p1.price
+        from sales.products p1
+        where price =
+                    (select 
+                    max(price) as max_price 
+                    from sales.products p
+                    where p.category=p1.category)
+
+/* Q18 — Correlated
+Find customers who have placed an order with a Sales value greater than the average Sales of orders
+placed by that same customer.
+Display: CustomerID, FirstName */
+SELECT DISTINCT
+    o.customerid,
+    (
+        SELECT c.firstname
+        FROM sales.customers c
+        WHERE c.customerid = o.customerid
+    ) AS firstname
+FROM sales.orders o
+WHERE o.sales >
+(
+    SELECT AVG(o2.sales)
+    FROM sales.orders o2
+    WHERE o2.customerid = o.customerid
+);
