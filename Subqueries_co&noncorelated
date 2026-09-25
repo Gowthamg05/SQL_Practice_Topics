@@ -1,0 +1,125 @@
+use salesdb
+/* Find all customers whose Score is greater than the average score of all customers.
+Display: CustomerID, FirstName, Score. Hint: One overall average for everyone */
+select 
+customerid,
+firstname,
+score 
+from sales.customers
+where score > (select avg(score) from sales.customers)
+
+/* Find the employee(s) who have the highest salary in the company.
+Display: EmployeeID, FirstName, Salary */
+
+select * from sales.Employees
+
+select 
+employeeid,
+firstname,
+salary
+from sales.employees
+where salary in (select max(salary) from sales.employees)
+
+/* Q3 — Non-correlated
+Find all products whose Price is greater than the average price of all products.
+Display: ProductID, Product, Price */
+
+select 
+productid,
+product,
+price  
+from sales.products
+where price > ( select avg(price) from sales.products)
+
+/* Q4 — Non-correlated
+Find all orders whose Sales is greater than the average Sales of all orders.
+Display: OrderID, CustomerID, Sales. */
+
+select 
+*
+from sales.orders
+where sales > (select avg(sales) from sales.orders)
+
+/* Q5 — Correlated
+Find employees whose salary is greater than the average salary of their own department.
+Display: EmployeeID, FirstName, Department, Salary. First correlated-subquery practice. */
+select 
+e.employeeid,
+e.firstname,
+e.department,
+e.salary
+from sales.employees e
+where salary > (  
+		select 
+		avg( salary ) 
+		from sales.employees e1
+		where e1.department = e.department)
+
+
+/* Q6 — Correlated
+Find customers whose Score is greater than the average Score of customers from their own country.
+Display: CustomerID, FirstName, Country, Score */
+select 
+* from sales.customers c
+where score > (
+
+select 
+AVG(COALESCE(score, 0))
+from sales.customers c1
+where c1.country= c.country)
+
+select * from sales.customers
+
+/* Q7 — Non-correlated
+Find customers who have placed at least one order. Use a subquery.
+Display: CustomerID, FirstName. The subquery should obtain relevant CustomerIDs from sales.orders */
+
+
+select customerid,
+firstname
+from sales.customers
+where customerid  in (
+select 
+customerid
+from sales.orders
+group by customerid
+having count(*)>=1)
+
+/* Q8 — Non-correlated
+Find products that have never been ordered. Use a subquery.
+Display: ProductID, Product. Think carefully about NOT IN and NULL */
+
+select * from sales.orders
+
+select productid,
+product from sales.products
+where productid not in (
+select 
+productid
+from sales.orders
+where productid is not null
+group by productid)
+
+/* Q9 — Non-correlated
+Find employees whose salary is greater than the maximum salary of employees in the Marketing
+department.
+Display: EmployeeID, FirstName, Department, Salary */
+
+
+select * from sales.employees
+where salary > ( select max(salary) from sales.employees
+				where department ='marketing')
+
+/* Q10 — Correlated
+Find products whose price is greater than the average price of products in the same category.
+Display: ProductID, Product, Category, Price. */
+
+select * from sales.products e
+where price> (
+select 
+avg(price)
+from sales.products e1
+where e1.category=e.category)
+
+select * from sales.products
+
