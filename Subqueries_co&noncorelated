@@ -240,3 +240,102 @@ WHERE o.sales >
     FROM sales.orders o2
     WHERE o2.customerid = o.customerid
 );
+
+/* Q14
+Find salespersons whose total sales are greater than the average total sales of all salespersons.
+Display: SalesPersonID, TotalSales */
+
+use salesdb
+
+SELECT
+    salespersonid,
+    total_sales
+FROM
+(
+    SELECT 
+        salespersonid,
+        SUM(sales) AS total_sales
+    FROM sales.orders
+    GROUP BY salespersonid
+) t
+WHERE total_sales >
+(
+    SELECT AVG(total_sales)
+    FROM
+    (
+        SELECT 
+            salespersonid,
+            SUM(sales) AS total_sales
+        FROM sales.orders
+        GROUP BY salespersonid
+    ) x
+);
+
+/* Q15
+Find employees whose salary is greater than the salary of the employee named Kevin.
+Display: EmployeeID, FirstName, Salary */
+
+select 
+employeeid,
+firstname,
+salary
+from sales.employees
+where salary >(
+select 
+salary
+from sales.employees
+where FirstName='kevin')
+
+/* Q19
+Find customers who are from USA and have a score greater than the average score of USA customers.
+Display: CustomerID, FirstName, Score */
+
+
+select 
+customerid,
+firstname,
+score
+from sales.customers
+where country ='usa'
+and score >(
+
+select 
+avg(score) as avg_usa_score
+from sales.customers
+where country ='usa')
+
+/* Q23
+Find orders whose sales are greater than the average sales of orders placed by the same customer.
+Display: OrderID, CustomerID, Sales */
+
+select 
+c.customerid,
+c.orderid,
+c.sales
+from sales.orders c
+where c.sales >(
+
+select 
+avg(sales) as avg_sales
+from sales.orders o
+where o.customerid=c.customerid
+group by customerid)
+
+/* Q24
+Find customers whose score is greater than the average score of customers from the same country.
+Display: CustomerID, FirstName, Country, Score */
+
+select 
+o.customerid,
+o.firstname,
+o.country,
+o.score
+from sales.customers o
+where o.score >(
+
+select 
+avg(score) as avg_score
+from sales.customers c
+where c.country=o.country)
+
+
