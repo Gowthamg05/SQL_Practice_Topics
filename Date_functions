@@ -1,0 +1,137 @@
+use salesdb
+
+select * from sales.orders
+
+/* Easy (warm-up)
+
+Show all orders placed in January 2025. [YEAR, MONTH]
+Show each order with the number of days between OrderDate and ShipDate. [DATEDIFF]
+Show each order's OrderDate as day name and month name (e.g. Wednesday, January). [DATENAME]
+List all employees with their birth year. [YEAR]
+Show the orders that shipped in the same month they were ordered. [MONTH] */
+
+select * from sales.orders
+
+select 
+orderid,
+productid,
+dateName(month,orderdate) as order_month
+from sales.orders
+where datename(month,orderdate)='January'
+and datename(year,orderdate)=2025
+
+-- Show each order with the number of days between OrderDate and ShipDate. [DATEDIFF]
+
+select 
+	orderid,
+	orderdate,
+	shipdate,
+	datediff(day,orderdate,shipdate) as date_diff,
+	row_number()over(order by  	datediff(day,orderdate,shipdate))as row_number,
+	dense_rank()over(order by  	datediff(day,orderdate,shipdate)) as dense_rnk,
+	rank()over(order by  datediff(day,orderdate,shipdate)) as normla_rnk
+	from sales.orders
+
+select * from sales.orders
+
+-- Show each order's OrderDate as day name and month name (e.g. Wednesday, January). [DATENAME]
+
+select 
+	orderid,
+	datename(weekday,orderdate)as day_name,
+	datename(month,orderdate) as month_name,
+	datediff(day,getdate(),orderdate)as difference_days,
+	getdate()as today_date
+	from sales.orders
+
+-- List all employees with their birth year. [YEAR]
+select * from sales.employees
+
+select 
+	employeeid,
+	year(birthdate)as bday_year,
+	datediff(day,getdate(),year(birthdate)) as days
+	from sales.employees
+
+-- Show the orders that shipped in the same month they were ordered. [MONTH] */
+select * from sales.orders
+
+select 
+	orderid,
+	productid,
+	month(orderdate)as order_month,
+	month(shipdate)as ship_month,
+	datediff(month,orderdate,shipdate) as diff_month
+	--dense_rank()over(order by datediff(month,orderdate,shipdate))as month_diff_rank
+	from sales.orders
+	where month(orderdate)=month(shipdate)
+
+
+  /* Medium
+6. Find the total sales for each month in the Orders table. [GROUP BY, DATEFROMPARTS or MONTH]
+7. Find the average shipping days per OrderStatus.
+8. List the orders that took more than 7 days to ship, with the customer's full name. [JOIN, DATEDIFF]
+9. Show each employee's current age in years. [DATEDIFF, DATEADD]
+10. Find the orders created between 12:00 and 18:00, regardless of date. [DATEPART(HOUR, ...)]
+11. Count the orders placed on weekends vs weekdays. [DATENAME or DATEPART(WEEKDAY, ...), CASE]
+12. Show each order's ShipDate plus 30 days as a "return deadline". [DATEADD] */
+
+select 
+	orderid,
+	productid,
+	sum(sales)as tot_sales
+	from sales.orders
+	group by orderid,productid
+
+--7. Find the average shipping days per OrderStatus.
+
+select * from sales.orders
+
+
+--8. List the orders that took more than 7 days to ship, with the customer's full name. [JOIN, DATEDIFF]
+
+select 
+	o.orderid,
+	o.customerid,
+	c.firstname+' '+c.lastname as customers_name,
+	datediff(day,orderdate,shipdate) as difference_days
+	from sales.orders o
+	left join sales.customers c
+	on o.customerid=c.customerid
+	where datediff(day,orderdate,shipdate)>=7
+
+--9. Show each employee's current age in years. [DATEDIFF, DATEADD]
+
+select 
+	employeeid,
+	firstname,
+	datediff(year,BirthDate,getdate())as age
+	from sales.employees
+
+--11. Count the orders placed on weekends vs weekdays. [DATENAME or DATEPART(WEEKDAY, ...), CASE]
+SELECT
+    CASE
+        WHEN DATENAME(WEEKDAY, OrderDate) IN ('Saturday', 'Sunday')
+            THEN 'Weekend'
+        ELSE 'Weekday'
+    END AS DayType,
+    COUNT(*) AS OrderCount
+FROM sales.orders
+GROUP BY
+    CASE
+        WHEN DATENAME(WEEKDAY, OrderDate) IN ('Saturday', 'Sunday')
+            THEN 'Weekend'
+        ELSE 'Weekday'
+    END;
+
+-- 12. Show each order's ShipDate plus 30 days as a "return deadline". [DATEADD] */
+
+select 
+	orderid,
+	shipdate,
+	dateadd(day,30,shipdate)as return_deadline
+	from sales.orders
+
+	
+	
+	
