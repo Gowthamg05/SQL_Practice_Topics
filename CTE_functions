@@ -1,0 +1,64 @@
+use salesdb
+
+-- using cte functions
+-- find the total  sales per customer
+-- also find the last order date of customers
+-- also give the rank to the customers 
+-- for here we want to use another cte 
+
+with total_sales as
+			(select 
+				customerid,
+	
+				sum(sales) as tot_sales
+				from sales.orders
+				group by customerid)
+-- step 2:  find the last date of order to the customer 
+,last_date as 
+			(
+				select 
+					customerid,
+					max(orderdate) as last_orders
+					from sales.orders
+					group by customerid )
+-- step 3: rank the customer based on the sales
+,rank_customers as
+			(select 
+				customerid,
+				tot_sales,
+				rank()over(order by tot_sales desc) as ranking_customer
+				from total_sales
+				)
+-- step:4 segment customer based on thier total sales
+,cte_segment as 
+(	
+	select 
+	customerid,
+	case when tot_sales > 100 then 'high'
+		when tot_sales> 50 then 'medium'
+		else 'low'
+		end over_segment
+		from total_sales
+		)
+
+
+select 
+c.customerid,
+c.firstname,
+c.lastname,
+cts.tot_sales,
+ld.last_orders,
+rc.ranking_customer,
+cs.over_segment
+from sales.customers c
+left join total_sales cts
+on c.customerid=cts.customerid
+left join last_date ld
+on c.customerid=ld.customerid
+left join rank_customers rc
+on c.customerid=rc.customerid
+left join cte_segment cs
+on c.customerid=cs.customerid
+
+
+
