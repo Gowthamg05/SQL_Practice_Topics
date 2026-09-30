@@ -1,0 +1,16 @@
+select distinct top 2(col),  sum( aggregation ) 
+from  table_name 
+where ( condition )  
+group by ( column ) 
+having ( condition ) 
+order by asc/desc 
+
+so executing order 
+
+from --- 1
+where --- 2
+group by ---- 3
+having --- 4
+select ---- 5 
+order by ---- 6
+top --- 7
