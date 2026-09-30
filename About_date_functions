@@ -1,0 +1,20 @@
+select * from sales.orders
+
+select orderid,
+productid,
+orderdate,
+shipdate,
+datetrunc(day,creationtime) day_dt, --reset minutes to 0
+datetrunc(minute,creationtime)min_dt, --reset seconds to 0
+datetrunc(year,creationtime)year_dt, --reset hour to 0
+datename(month,creationtime)month_name,
+datename(weekday,creationtime)weekday_name,
+datepart(month,creationtime) month_dp,
+datepart(year,creationtime)year_dp,
+datepart(day,creationtime) day_dp,
+datepart(hour,creationtime)hour_dp,
+day(creationtime) day,
+month(creationtime) month,
+year(creationtime) year,
+creationtime
+from sales.orders
