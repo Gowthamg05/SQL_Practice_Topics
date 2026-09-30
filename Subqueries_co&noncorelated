@@ -1,3 +1,193 @@
+--sub queries
+
+-- show the productid,productname,prices and total number of orders 
+
+use salesdb
+select * from sales.products
+
+select 
+productid,
+product as product_name,
+price,
+(select count(orderid) from sales.orders) as tot_orders
+from sales.products
+
+-- show all the customers  details and find the total  orders for each customer
+
+	select * from sales.Customers c
+	join
+	(
+	select 
+	customerid,
+	sum(orderid) as tot_order
+	from sales.orders
+	group by customerid) t on
+	c.customerid=t.customerid
+
+
+
+
+select * from sales.orders
+
+
+
+
+use salesdb
+
+--find products that  have   a price higher than the average price of all products
+-- while using subqueries in where clause it must be return a scalar values that mean single values
+-- using comparison operator like <,>,<=,>=,= this will return the single value 
+
+select 
+* from sales.products
+where  price > (select avg(price) from sales.products)
+
+--show the details of orders made by customer in germany
+select * from sales.customers
+
+select * from sales.orders
+
+select * from sales.orders
+where customerid in(
+select customerid from sales.customers
+where country ='germany')
+
+--using any operator 
+-- find female employees whose salaries is greather than any of the male employees 
+
+select * from sales.employees
+where gender ='f'
+and salary > any(select salary from sales.employees where gender ='m')
+
+-- using all operator 
+-- find female employees whose salaries is greather than all of the male employees 
+
+select * from sales.employees
+where gender ='f'
+and salary > all(select salary from sales.employees where gender ='m')
+
+
+
+
+/* Q19 — Correlated EXISTS
+Find customers who have at least one order with Sales > 50.
+Display: CustomerID, FirstName. Try specifically using EXISTS. */
+
+use salesdb
+select * from sales.orders
+
+select 
+customerid,
+firstname
+from sales.customers 
+where exists(
+
+			select 
+			customerid,
+			sales
+			from sales.orders
+			where sales > 50)
+
+/* Q20 — Correlated NOT EXISTS
+Find customers who have never placed an order.
+Display: CustomerID, FirstName. Try specifically using NOT EXISTS. */
+
+select 
+c.customerid,
+c.firstname
+from sales.customers c
+where not exists(
+
+select 
+o.customerid,
+o.orderid
+from sales.orders o
+where o.customerid=c.customerid)
+
+/* Q21 — Correlated EXISTS
+Find products that have been ordered at least once.
+Display: ProductID, Product, Category. Use EXISTS. */
+
+select 
+p.productid,
+p.product,
+p.category
+from sales.products p
+where exists(
+
+			select 
+			1 from sales.orders o
+			where o.productid=p.productid)
+
+
+/* Q22 — Correlated NOT EXISTS
+Find products that have never appeared in any order.
+Display: ProductID, Product. Use NOT EXISTS. */
+
+
+select 
+p.productid,
+p.product
+from sales.products p
+where not exists(
+
+		select 
+		1 from sales.orders o
+		where o.productid=p.productid )
+
+/* Q23 — Advanced correlated
+Find customers who have placed at least two orders and whose latest order 
+Sales value is greater than their
+own average order Sales.
+Display: CustomerID, FirstName. Combines customerfiorders, aggregation, 
+latest order, average order sales, and
+correlated logic. */
+select 
+c.customerid,
+c.firstname
+from sales.customers c
+where exists(
+
+select customerid,
+count(o.orderid) as tot_orders,
+max(o.orderdate) as latest_orders,
+avg(o.sales) as avg_sales
+from sales.orders o
+ where o.customerid=c.customerid
+group by o.customerid
+having count(o.orderid)>=2 )
+
+
+/* SELECT
+    c.customerid,
+    c.firstname
+FROM sales.customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM sales.orders o
+    WHERE o.customerid = c.customerid
+    GROUP BY o.customerid
+    HAVING COUNT(*) >= 2
+       AND (
+            SELECT o2.sales
+            FROM sales.orders o2
+            WHERE o2.customerid = c.customerid
+              AND o2.orderdate = (
+                    SELECT MAX(o3.orderdate)
+                    FROM sales.orders o3
+                    WHERE o3.customerid = c.customerid
+              )
+       ) > AVG(o.sales)
+); */
+
+
+
+
+
+
+
+
+
 use salesdb
 /* Find all customers whose Score is greater than the average score of all customers.
 Display: CustomerID, FirstName, Score. Hint: One overall average for everyone */
