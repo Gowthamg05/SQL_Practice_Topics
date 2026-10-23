@@ -61,4 +61,150 @@ left join cte_segment cs
 on c.customerid=cs.customerid
 
 
+use salesdb
 
+/* Show each customer’s full name, country, total number of orders, and total sales from the Orders table. 
+Include customers with no orders (show 0 instead of NULL). Sort by total sales, highest first.*/
+with c_name as(
+	select 
+	customerid,
+	firstname,
+	lastname,
+	country
+	from sales.customers
+	),
+ m_table as(
+	select 
+		customerid,
+		count(orderid)as tot_orders,
+		sum(sales)as tot_sales
+		from sales.orders 
+		group by customerid
+		)
+
+select 
+c.firstname,c.lastname,c.country,
+c.firstname+' '+c.lastname as Full_name,
+COALESCE(t.tot_orders, 0) AS tot_orders,
+COALESCE(t.tot_sales, 0)  AS tot_sales
+from c_name c
+left join  m_table t
+on t.customerid=c.customerid
+order by t.tot_sales desc
+
+/* NULL handling + CASE
+For the Orders table, create a column AddressStatus that says:
+
+'Missing Both' if ShipAddress and BillAddress are both NULL
+'Missing Bill' if only BillAddress is NULL
+'Complete' otherwise */
+
+select * from sales.orders
+
+SELECT
+    OrderID,
+    ShipAddress,
+    BillAddress,
+    CASE
+        WHEN ShipAddress IS NULL AND BillAddress IS NULL THEN 'Missing Both'
+        WHEN BillAddress IS NULL THEN 'Missing Bill'
+        ELSE 'Complete'
+    END AS AddressStatus
+FROM Sales.Orders;
+/* (Advanced): Self Join
+Show each employee’s name along with their manager’s full name. 
+Employees with no manager should show 'No Manager'. 
+Handle the NULL LastName for Mary carefully so the full name doesn’t become NULL.*/
+
+select * from sales.employees
+
+select 
+	e.firstname,
+	e1.firstname
+	from sales.employees e
+	join sales.employees e1
+	on e1.managerid=e.employeeid
+
+SELECT
+    e.firstname AS employee_name,
+    COALESCE(m.firstname + ' ' + m.lastname, m.firstname, 'No Manager') AS manager_name
+FROM sales.employees e
+LEFT JOIN sales.employees m
+    ON e.managerid = m.employeeid;
+
+/* (Advanced): Window Functions
+For each salesperson in the Orders table, show:
+Their orders ranked by Sales (highest first) using ROW_NUMBER()
+A running total of Sales ordered by OrderDate
+The difference between each order’s Sales and the previous order’s 
+Sales for that salesperson (use LAG())*/
+
+select * from sales.orders
+
+
+
+	SELECT
+    salespersonid,
+    orderid,
+    orderdate,
+    sales,
+    ROW_NUMBER() OVER (
+        PARTITION BY salespersonid
+        ORDER BY sales DESC
+    ) AS sales_rank,
+    SUM(sales) OVER (
+        PARTITION BY salespersonid
+        ORDER BY orderdate, orderid
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_total,
+    LAG(sales) OVER (
+        PARTITION BY salespersonid
+        ORDER BY orderdate, orderid
+    ) AS previous_sales,
+    sales - LAG(sales) OVER (
+        PARTITION BY salespersonid
+        ORDER BY orderdate, orderid
+    ) AS sales_diff
+FROM sales.orders
+ORDER BY salespersonid, orderdate, orderid;
+
+/* (Advanced): CTE + Deduplication + Subquery
+In OrdersArchive, some OrderIDs appear twice (for example OrderID 4 and 6) with different 
+statuses or creation times.
+Write a query that keeps only the latest record per OrderID (based on CreationTime). 
+Then, using that cleaned result, find the total sales per product Category by joining to Products, 
+and return only categories where total sales is above the average category total. */
+
+select * from sales.OrdersArchive
+
+    
+
+
+WITH dedup AS (
+    SELECT *,
+           ROW_NUMBER() OVER (
+               PARTITION BY orderid
+               ORDER BY creationtime DESC
+           ) AS rn
+    FROM sales.ordersarchive
+),
+latest_orders AS (
+    SELECT *
+    FROM dedup
+    WHERE rn = 1
+),
+category_totals AS (
+    SELECT
+        p.category,
+        SUM(o.sales) AS total_sales
+    FROM latest_orders o
+    JOIN sales.products p
+        ON p.productid = o.productid
+    GROUP BY p.category
+)
+SELECT
+    category,
+    total_sales
+FROM category_totals
+WHERE total_sales > (SELECT AVG(total_sales) FROM category_totals)
+ORDER BY total_sales DESC;
