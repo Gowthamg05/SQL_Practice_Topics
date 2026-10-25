@@ -1,0 +1,37 @@
+
+/* Table: OrdersArchive (your 2024 data)
+
+Scenario: The data team found that OrdersArchive contains duplicate OrderIDs 
+because the same order was saved multiple times as its status changed. You need to build a clean report.
+
+Task: Write a query that returns one row per OrderID, following these rules:
+
+If an OrderID has multiple rows, keep the one with the latest CreationTime.
+Return only these columns: OrderID, CustomerID, OrderStatus, BillAddress, Sales, CreationTime.
+Add a new column called BillAddressFixed that shows 'Not Provided' when BillAddress is NULL or an empty string.
+Sort the final result by OrderID. */
+
+select 
+	* from sales.OrdersArchive
+
+with de_duplicate as(
+
+	select 
+		*,
+		row_number()over(partition by orderid order by creationtime desc) as rnk
+		from sales.OrdersArchive
+		)
+
+select
+	orderid,
+	customerid,
+	orderstatus,
+	sales,
+	creationtime,
+	 CASE
+        WHEN billaddress IS NULL OR billaddress = '' THEN 'Not Provided'
+        ELSE billaddress
+    END AS BillAddressFixed
+	from de_duplicate
+	where rnk=1
+  order by orderid
